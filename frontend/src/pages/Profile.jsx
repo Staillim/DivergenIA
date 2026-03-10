@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
@@ -7,14 +7,25 @@ import RoleBadge from '../components/RoleBadge'
 import '../styles/profile.css'
 
 function Profile() {
-  const { profile, user, loading: authLoading } = useAuth()
+  const { profile, user, loading: authLoading, error: authError } = useAuth()
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
-    nombre: profile?.nombre || '',
-    carrera: profile?.carrera || '',
-    semestre: profile?.semestre || ''
+    nombre: '',
+    carrera: '',
+    semestre: ''
   })
+
+  // Actualizar formulario cuando el perfil se cargue
+  useEffect(() => {
+    if (profile) {
+      setForm({
+        nombre: profile.nombre || '',
+        carrera: profile.carrera || '',
+        semestre: profile.semestre || ''
+      })
+    }
+  }, [profile])
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -50,7 +61,20 @@ function Profile() {
     return <div className="loading-screen"><div className="spinner"></div><p>Cargando perfil...</p></div>
   }
 
-  // Si terminó de cargar pero no hay perfil, mostrar error
+  // Si hay error, mostrarlo
+  if (authError && !profile) {
+    return (
+      <div className="page">
+        <div className="empty-state">
+          <h2>Error al cargar perfil</h2>
+          <p>{authError}</p>
+          <p>Por favor, verifica tu conexión e intenta nuevamente.</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Si terminó de cargar pero no hay perfil, mostrar error genérico
   if (!profile) {
     return (
       <div className="page">

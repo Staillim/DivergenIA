@@ -9,6 +9,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     // Obtener sesión actual
@@ -29,6 +30,7 @@ export function AuthProvider({ children }) {
           await fetchProfile(session.user.id)
         } else {
           setProfile(null)
+          setError(null)
           setLoading(false)
         }
       }
@@ -39,19 +41,23 @@ export function AuthProvider({ children }) {
 
   async function fetchProfile(userId) {
     try {
+      setError(null)
       const { data, error } = await supabase
         .from('usuarios')
         .select('*')
         .eq('id', userId)
         .single()
 
-      if (error) throw error
-      setProfile(data)
+      if (error) {
+        console.error('Error fetching profile:', error)
+        setError('No se pudo cargar el perfil de usuario')
+        setProfile(null)
+      } else {
+        setProfile(data)
+      }
     } catch (error) {
       console.error('Error fetching profile:', error)
-      // Si falla cargar el perfil, cerrar sesión para evitar estado inconsistente
-      await supabase.auth.signOut()
-      setUser(null)
+      setError('Error de conexión al cargar el perfil')
       setProfile(null)
     } finally {
       setLoading(false)
@@ -98,12 +104,14 @@ export function AuthProvider({ children }) {
     if (error) throw error
     setUser(null)
     setProfile(null)
+    setError(null)
   }
 
   const value = {
     user,
     profile,
     loading,
+    error,
     signUp,
     signIn,
     signOut,
