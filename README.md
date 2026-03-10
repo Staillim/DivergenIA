@@ -225,6 +225,30 @@ node verify-connection.js
 | Miembro | Crear proyectos, ideas, subir archivos |
 | Administrador | Aprobar miembros, gestionar todo |
 
+## 🌐 Despliegue en Producción
+
+La aplicación está lista para desplegarse en servicios gratuitos:
+
+- **Frontend**: Netlify (archivo `netlify.toml` incluido)
+- **Backend**: Render.com o Railway
+- **Base de datos**: Supabase (ya configurado)
+
+📖 **Guía completa de despliegue**: Ver [DEPLOYMENT.md](DEPLOYMENT.md)
+
+### Resumen Rápido
+
+1. **Backend en Render**:
+   - Conecta el repo en render.com
+   - Root directory: `backend`
+   - Agrega variables de entorno (SUPABASE_URL, SUPABASE_SERVICE_KEY, FRONTEND_URL)
+
+2. **Frontend en Netlify**:
+   - Conecta el repo en netlify.com
+   - Detecta automáticamente la configuración
+   - Agrega variables de entorno (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)
+
+3. **Actualiza CORS**: Agrega la URL de Netlify en `backend/.env` → `FRONTEND_URL`
+
 ## 📄 Licencia
 
 Proyecto interno del Semillero DivergenIA © 2026
