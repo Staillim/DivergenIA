@@ -23,9 +23,9 @@ function Home() {
       // Obtener estadísticas en paralelo
       const [proyectosRes, miembrosRes, avancesRes, usuariosRes] = await Promise.all([
         supabase.from('proyectos').select('id', { count: 'exact', head: true }),
-        supabase.from('usuarios').select('id', { count: 'exact', head: true }).eq('activo', true),
+        supabase.from('usuarios').select('id', { count: 'exact', head: true }),
         supabase.from('avances').select('id', { count: 'exact', head: true }),
-        supabase.from('usuarios').select('*').eq('activo', true).order('created_at', { ascending: true }).limit(6)
+        supabase.from('usuarios').select('*').order('nombre', { ascending: true }).limit(6)
       ])
 
       setStats({
