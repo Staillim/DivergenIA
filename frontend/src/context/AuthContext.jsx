@@ -43,43 +43,39 @@ export function AuthProvider({ children }) {
     try {
       setError(null)
       
-      // Timeout de 10 segundos para evitar carga infinita
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout al cargar perfil')), 10000)
-      )
-      
-      const fetchPromise = supabase
+      const { data, error } = await supabase
         .from('usuarios')
         .select('*')
         .eq('id', userId)
         .single()
 
-      const { data, error } = await Promise.race([fetchPromise, timeoutPromise])
-
       if (error) {
         console.error('Error fetching profile:', error)
-        // Cerrar sesión automáticamente si no se puede cargar el perfil
-        await supabase.auth.signOut()
-        setUser(null)
-        setProfile(null)
-        setError('No se pudo cargar tu perfil. Por favor, inicia sesión nuevamente.')
-      } else if (!data) {
-        console.error('No profile data found for user')
-        // Cerrar sesión si no existe perfil en la base de datos
-        await supabase.auth.signOut()
-        setUser(null)
-        setProfile(null)
-        setError('No se encontró tu perfil en la base de datos.')
-      } else {
+        
+        // Si el error es que no se encontró el usuario (404)
+        if (error.code === 'PGRST116') {
+          setError('No se encontró tu perfil en la base de datos.')
+          setProfile(null)
+          // NO cerrar sesión, dejar que el usuario vea el error
+        } else {
+          // Otros errores sí cierran sesión
+          console.error('Critical error, logging out:', error)
+          await supabase.auth.signOut()
+          setUser(null)
+          setProfile(null)
+          setError('Error al cargar el perfil. Por favor, inicia sesión nuevamente.')
+        }
+      } else if (data) {
         setProfile(data)
+      } else {
+        console.error('No profile data returned')
+        setProfile(null)
+        setError('No se pudo obtener tu información de perfil.')
       }
     } catch (error) {
-      console.error('Error fetching profile:', error)
-      // Cerrar sesión automáticamente en caso de error
-      await supabase.auth.signOut()
-      setUser(null)
+      console.error('Unexpected error fetching profile:', error)
       setProfile(null)
-      setError('Error al cargar el perfil. Por favor, inicia sesión nuevamente.')
+      setError('Error inesperado al cargar el perfil.')
     } finally {
       setLoading(false)
     }
