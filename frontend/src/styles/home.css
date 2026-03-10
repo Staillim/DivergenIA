@@ -282,8 +282,112 @@
   margin-top: 4px;
 }
 
+/* Team Section */
+.team-section {
+  padding: 60px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  margin-top: 40px;
+}
+
+.team-member-card {
+  text-align: center;
+  padding: 32px 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.team-member-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 50px rgba(0, 61, 165, 0.12);
+  border-color: rgba(0, 61, 165, 0.2);
+}
+
+.team-avatar-large {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 20px rgba(0, 61, 165, 0.15);
+  transition: all 0.3s ease;
+}
+
+.team-member-card:hover .team-avatar-large {
+  transform: scale(1.05);
+  box-shadow: 0 12px 28px rgba(0, 61, 165, 0.25);
+}
+
+.team-member-card h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.team-role {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 500;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.team-bio {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 16px;
+  flex-grow: 1;
+}
+
+.team-social {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.team-social-link {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 61, 165, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.team-social-link:hover {
+  background: var(--primary);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 61, 165, 0.2);
+}
+
 @media (max-width: 768px) {
   .hero h1 { font-size: 32px; }
   .hero-actions { flex-direction: column; align-items: center; }
   .hero-stats { gap: 24px; }
+  .team-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
 }

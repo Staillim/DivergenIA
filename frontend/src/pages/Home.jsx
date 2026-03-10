@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { FiArrowRight, FiUsers, FiFolder, FiBookOpen, FiCpu, FiZap, FiBarChart2, FiMessageSquare, FiEye, FiActivity, FiTrendingUp } from 'react-icons/fi'
+import { FiArrowRight, FiUsers, FiFolder, FiBookOpen, FiCpu, FiZap, FiBarChart2, FiMessageSquare, FiEye, FiActivity, FiTrendingUp, FiGithub, FiLinkedin, FiMail } from 'react-icons/fi'
 import { FaRobot, FaDna } from 'react-icons/fa'
 import '../styles/home.css'
 
@@ -99,6 +99,82 @@ function Home() {
           <div className="line-card">
             <span className="line-emoji"><FiTrendingUp /></span>
             <h4>IA en Finanzas</h4>
+          </div>
+        </div>
+      </section>
+
+      {/* Equipo del Semillero */}
+      <section className="team-section page">
+        <h2 className="section-title">Nuestro Equipo</h2>
+        <p className="section-subtitle">
+          Conoce a los integrantes que hacen posible DivergenIA
+        </p>
+        <div className="team-grid">
+          <div className="team-member-card card">
+            <div className="team-avatar-large">JD</div>
+            <h3>Juan Díaz</h3>
+            <span className="team-role">Coordinador del Semillero</span>
+            <p className="team-bio">Ingeniero en Sistemas con maestría en IA. Lidera la dirección estratégica del semillero.</p>
+            <div className="team-social">
+              <a href="mailto:juan.diaz@example.com" className="team-social-link" title="Email"><FiMail /></a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="LinkedIn"><FiLinkedin /></a>
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="GitHub"><FiGithub /></a>
+            </div>
+          </div>
+
+          <div className="team-member-card card">
+            <div className="team-avatar-large">MR</div>
+            <h3>María Rodríguez</h3>
+            <span className="team-role">Investigadora Senior</span>
+            <p className="team-bio">Especialista en Machine Learning y procesamiento de datos. Lidera proyectos de investigación.</p>
+            <div className="team-social">
+              <a href="mailto:maria.rodriguez@example.com" className="team-social-link" title="Email"><FiMail /></a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="LinkedIn"><FiLinkedin /></a>
+            </div>
+          </div>
+
+          <div className="team-member-card card">
+            <div className="team-avatar-large">CP</div>
+            <h3>Carlos Pérez</h3>
+            <span className="team-role">Desarrollador Principal</span>
+            <p className="team-bio">Desarrollador full-stack enfocado en aplicaciones de IA. Mantiene la infraestructura técnica.</p>
+            <div className="team-social">
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="GitHub"><FiGithub /></a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="LinkedIn"><FiLinkedin /></a>
+            </div>
+          </div>
+
+          <div className="team-member-card card">
+            <div className="team-avatar-large">AS</div>
+            <h3>Ana Santos</h3>
+            <span className="team-role">Investigadora en NLP</span>
+            <p className="team-bio">Lingüista computacional especializada en procesamiento de lenguaje natural y modelos de lenguaje.</p>
+            <div className="team-social">
+              <a href="mailto:ana.santos@example.com" className="team-social-link" title="Email"><FiMail /></a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="LinkedIn"><FiLinkedin /></a>
+            </div>
+          </div>
+
+          <div className="team-member-card card">
+            <div className="team-avatar-large">LM</div>
+            <h3>Luis Martínez</h3>
+            <span className="team-role">Investigador en Computer Vision</span>
+            <p className="team-bio">Especialista en visión por computadora y redes neuronales convolucionales.</p>
+            <div className="team-social">
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="GitHub"><FiGithub /></a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="LinkedIn"><FiLinkedin /></a>
+            </div>
+          </div>
+
+          <div className="team-member-card card">
+            <div className="team-avatar-large">SG</div>
+            <h3>Sofía Gómez</h3>
+            <span className="team-role">Data Scientist</span>
+            <p className="team-bio">Científica de datos enfocada en análisis predictivo y visualización de información.</p>
+            <div className="team-social">
+              <a href="mailto:sofia.gomez@example.com" className="team-social-link" title="Email"><FiMail /></a>
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="GitHub"><FiGithub /></a>
+            </div>
           </div>
         </div>
       </section>
