@@ -42,23 +42,44 @@ export function AuthProvider({ children }) {
   async function fetchProfile(userId) {
     try {
       setError(null)
-      const { data, error } = await supabase
+      
+      // Timeout de 10 segundos para evitar carga infinita
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout al cargar perfil')), 10000)
+      )
+      
+      const fetchPromise = supabase
         .from('usuarios')
         .select('*')
         .eq('id', userId)
         .single()
 
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise])
+
       if (error) {
         console.error('Error fetching profile:', error)
-        setError('No se pudo cargar el perfil de usuario')
+        // Cerrar sesión automáticamente si no se puede cargar el perfil
+        await supabase.auth.signOut()
+        setUser(null)
         setProfile(null)
+        setError('No se pudo cargar tu perfil. Por favor, inicia sesión nuevamente.')
+      } else if (!data) {
+        console.error('No profile data found for user')
+        // Cerrar sesión si no existe perfil en la base de datos
+        await supabase.auth.signOut()
+        setUser(null)
+        setProfile(null)
+        setError('No se encontró tu perfil en la base de datos.')
       } else {
         setProfile(data)
       }
     } catch (error) {
       console.error('Error fetching profile:', error)
-      setError('Error de conexión al cargar el perfil')
+      // Cerrar sesión automáticamente en caso de error
+      await supabase.auth.signOut()
+      setUser(null)
       setProfile(null)
+      setError('Error al cargar el perfil. Por favor, inicia sesión nuevamente.')
     } finally {
       setLoading(false)
     }
