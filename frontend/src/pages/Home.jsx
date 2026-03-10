@@ -1,9 +1,47 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { FiArrowRight, FiUsers, FiFolder, FiBookOpen, FiCpu, FiZap, FiBarChart2, FiMessageSquare, FiEye, FiActivity, FiTrendingUp, FiGithub, FiLinkedin, FiMail } from 'react-icons/fi'
 import { FaRobot, FaDna } from 'react-icons/fa'
+import { supabase } from '../lib/supabase'
 import '../styles/home.css'
 
 function Home() {
+  const [stats, setStats] = useState({
+    proyectos: 0,
+    miembros: 0,
+    investigaciones: 0
+  })
+  const [teamMembers, setTeamMembers] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadHomeData()
+  }, [])
+
+  async function loadHomeData() {
+    try {
+      // Obtener estadísticas en paralelo
+      const [proyectosRes, miembrosRes, avancesRes, usuariosRes] = await Promise.all([
+        supabase.from('proyectos').select('id', { count: 'exact', head: true }),
+        supabase.from('usuarios').select('id', { count: 'exact', head: true }).eq('activo', true),
+        supabase.from('avances').select('id', { count: 'exact', head: true }),
+        supabase.from('usuarios').select('*').eq('activo', true).order('created_at', { ascending: true }).limit(6)
+      ])
+
+      setStats({
+        proyectos: proyectosRes.count || 0,
+        miembros: miembrosRes.count || 0,
+        investigaciones: avancesRes.count || 0
+      })
+
+      setTeamMembers(usuariosRes.data || [])
+    } catch (error) {
+      console.error('Error loading home data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="home">
       {/* Hero */}
@@ -27,15 +65,15 @@ function Home() {
           </div>
           <div className="hero-stats">
             <div className="stat">
-              <span className="stat-number">12+</span>
+              <span className="stat-number">{loading ? '...' : `${stats.proyectos}+`}</span>
               <span className="stat-label">Proyectos</span>
             </div>
             <div className="stat">
-              <span className="stat-number">25+</span>
+              <span className="stat-number">{loading ? '...' : `${stats.miembros}+`}</span>
               <span className="stat-label">Miembros</span>
             </div>
             <div className="stat">
-              <span className="stat-number">8+</span>
+              <span className="stat-number">{loading ? '...' : `${stats.investigaciones}+`}</span>
               <span className="stat-label">Investigaciones</span>
             </div>
           </div>
@@ -109,74 +147,43 @@ function Home() {
         <p className="section-subtitle">
           Conoce a los integrantes que hacen posible DivergenIA
         </p>
-        <div className="team-grid">
-          <div className="team-member-card card">
-            <div className="team-avatar-large">JD</div>
-            <h3>Juan Díaz</h3>
-            <span className="team-role">Coordinador del Semillero</span>
-            <p className="team-bio">Ingeniero en Sistemas con maestría en IA. Lidera la dirección estratégica del semillero.</p>
-            <div className="team-social">
-              <a href="mailto:juan.diaz@example.com" className="team-social-link" title="Email"><FiMail /></a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="LinkedIn"><FiLinkedin /></a>
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="GitHub"><FiGithub /></a>
-            </div>
+        {loading ? (
+          <div className="loading-state" style={{ textAlign: 'center', padding: '40px' }}>
+            <div className="spinner"></div>
+            <p>Cargando equipo...</p>
           </div>
-
-          <div className="team-member-card card">
-            <div className="team-avatar-large">MR</div>
-            <h3>María Rodríguez</h3>
-            <span className="team-role">Investigadora Senior</span>
-            <p className="team-bio">Especialista en Machine Learning y procesamiento de datos. Lidera proyectos de investigación.</p>
-            <div className="team-social">
-              <a href="mailto:maria.rodriguez@example.com" className="team-social-link" title="Email"><FiMail /></a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="LinkedIn"><FiLinkedin /></a>
-            </div>
+        ) : teamMembers.length > 0 ? (
+          <div className="team-grid">
+            {teamMembers.map(member => (
+              <div key={member.id} className="team-member-card card">
+                <div className="team-avatar-large">
+                  {member.nombre?.split(' ').map(n => n.charAt(0)).slice(0, 2).join('').toUpperCase() || 'U'}
+                </div>
+                <h3>{member.nombre || 'Miembro'}</h3>
+                <span className="team-role">
+                  {member.rol === 'administrador' ? 'Administrador del Semillero' : 
+                   member.rol === 'miembro' ? 'Investigador' : member.rol}
+                </span>
+                {member.carrera && (
+                  <p className="team-bio">
+                    {member.carrera}{member.semestre ? ` - ${member.semestre}° Semestre` : ''}
+                  </p>
+                )}
+                <div className="team-social">
+                  {member.correo && (
+                    <a href={`mailto:${member.correo}`} className="team-social-link" title="Email">
+                      <FiMail />
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
-
-          <div className="team-member-card card">
-            <div className="team-avatar-large">CP</div>
-            <h3>Carlos Pérez</h3>
-            <span className="team-role">Desarrollador Principal</span>
-            <p className="team-bio">Desarrollador full-stack enfocado en aplicaciones de IA. Mantiene la infraestructura técnica.</p>
-            <div className="team-social">
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="GitHub"><FiGithub /></a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="LinkedIn"><FiLinkedin /></a>
-            </div>
+        ) : (
+          <div className="empty-state" style={{ textAlign: 'center', padding: '40px' }}>
+            <p>No hay miembros registrados aún</p>
           </div>
-
-          <div className="team-member-card card">
-            <div className="team-avatar-large">AS</div>
-            <h3>Ana Santos</h3>
-            <span className="team-role">Investigadora en NLP</span>
-            <p className="team-bio">Lingüista computacional especializada en procesamiento de lenguaje natural y modelos de lenguaje.</p>
-            <div className="team-social">
-              <a href="mailto:ana.santos@example.com" className="team-social-link" title="Email"><FiMail /></a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="LinkedIn"><FiLinkedin /></a>
-            </div>
-          </div>
-
-          <div className="team-member-card card">
-            <div className="team-avatar-large">LM</div>
-            <h3>Luis Martínez</h3>
-            <span className="team-role">Investigador en Computer Vision</span>
-            <p className="team-bio">Especialista en visión por computadora y redes neuronales convolucionales.</p>
-            <div className="team-social">
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="GitHub"><FiGithub /></a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="LinkedIn"><FiLinkedin /></a>
-            </div>
-          </div>
-
-          <div className="team-member-card card">
-            <div className="team-avatar-large">SG</div>
-            <h3>Sofía Gómez</h3>
-            <span className="team-role">Data Scientist</span>
-            <p className="team-bio">Científica de datos enfocada en análisis predictivo y visualización de información.</p>
-            <div className="team-social">
-              <a href="mailto:sofia.gomez@example.com" className="team-social-link" title="Email"><FiMail /></a>
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="team-social-link" title="GitHub"><FiGithub /></a>
-            </div>
-          </div>
-        </div>
+        )}
       </section>
 
       {/* CTA */}
