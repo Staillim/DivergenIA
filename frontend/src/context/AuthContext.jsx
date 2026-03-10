@@ -49,6 +49,10 @@ export function AuthProvider({ children }) {
       setProfile(data)
     } catch (error) {
       console.error('Error fetching profile:', error)
+      // Si falla cargar el perfil, cerrar sesión para evitar estado inconsistente
+      await supabase.auth.signOut()
+      setUser(null)
+      setProfile(null)
     } finally {
       setLoading(false)
     }

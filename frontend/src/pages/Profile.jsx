@@ -7,9 +7,9 @@ import RoleBadge from '../components/RoleBadge'
 import '../styles/profile.css'
 
 function Profile() {
-  const { profile, user } = useAuth()
+  const { profile, user, loading: authLoading } = useAuth()
   const [editing, setEditing] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
     nombre: profile?.nombre || '',
     carrera: profile?.carrera || '',
@@ -22,7 +22,7 @@ function Profile() {
 
   const handleSave = async (e) => {
     e.preventDefault()
-    setLoading(true)
+    setSaving(true)
     try {
       const { error } = await supabase
         .from('usuarios')
@@ -41,12 +41,24 @@ function Profile() {
     } catch (error) {
       toast.error('Error al actualizar: ' + error.message)
     } finally {
-      setLoading(false)
+      setSaving(false)
     }
   }
 
-  if (!profile) {
+  // Si está cargando, mostrar spinner
+  if (authLoading) {
     return <div className="loading-screen"><div className="spinner"></div><p>Cargando perfil...</p></div>
+  }
+
+  // Si terminó de cargar pero no hay perfil, mostrar error
+  if (!profile) {
+    return (
+      <div className="page">
+        <div className="empty-state">
+          <p>No se pudo cargar el perfil. Por favor, intenta iniciar sesión nuevamente.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -90,8 +102,8 @@ function Profile() {
               </div>
               <div className="profile-form-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setEditing(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary" disabled={loading}>
-                  <FiSave /> {loading ? 'Guardando...' : 'Guardar'}
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  <FiSave /> {saving ? 'Guardando...' : 'Guardar'}
                 </button>
               </div>
             </div>
