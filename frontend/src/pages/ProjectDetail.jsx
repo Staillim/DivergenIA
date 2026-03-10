@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { FiPlus, FiUsers, FiFile, FiCalendar, FiArrowLeft } from 'react-icons/fi'
+import { FiPlus, FiUsers, FiFile, FiCalendar, FiArrowLeft, FiTrendingUp, FiFolder } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import '../styles/project-detail.css'
 
@@ -129,9 +129,9 @@ function ProjectDetail() {
             className={`tab ${activeTab === tab ? 'tab-active' : ''}`}
             onClick={() => setActiveTab(tab)}
           >
-            {tab === 'avances' && '📈 Avances'}
-            {tab === 'equipo' && '👥 Equipo'}
-            {tab === 'archivos' && '📁 Archivos'}
+            {tab === 'avances' && <><FiTrendingUp /> Avances</>}
+            {tab === 'equipo' && <><FiUsers /> Equipo</>}
+            {tab === 'archivos' && <><FiFolder /> Archivos</>}
           </button>
         ))}
       </div>
@@ -193,7 +193,7 @@ function ProjectDetail() {
             <div className="files-list">
               {files.map(file => (
                 <div key={file.id} className="file-item card">
-                  <div className="file-icon">📄</div>
+                  <div className="file-icon"><FiFile /></div>
                   <div className="file-info">
                     <h4>{file.nombre}</h4>
                     <span>Subido por: {file.usuarios?.nombre} • {new Date(file.fecha_subida).toLocaleDateString('es-CO')}</span>

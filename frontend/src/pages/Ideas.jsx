@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { FiPlus, FiThumbsUp, FiThumbsDown, FiMessageCircle } from 'react-icons/fi'
+import { FaLightbulb } from 'react-icons/fa'
 import toast from 'react-hot-toast'
 import '../styles/ideas.css'
 
@@ -88,7 +89,7 @@ function Ideas() {
   return (
     <div className="page">
       <div className="section-header">
-        <h1>💡 Banco de Ideas</h1>
+        <h1><FaLightbulb className="page-icon" /> Banco de Ideas</h1>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
           <FiPlus /> Nueva Idea
         </button>
@@ -103,8 +104,8 @@ function Ideas() {
             onClick={() => setFilter(f)}
           >
             {f === 'todas' ? 'Todas' :
-             f === 'votacion' ? '🗳️ En votación' :
-             f === 'aprobada' ? '✅ Aprobadas' : '❌ Rechazadas'}
+             f === 'votacion' ? 'En votación' :
+             f === 'aprobada' ? 'Aprobadas' : 'Rechazadas'}
           </button>
         ))}
       </div>
@@ -122,7 +123,7 @@ function Ideas() {
               <h3>{idea.titulo}</h3>
               <p>{idea.descripcion}</p>
               <div className="idea-card-author">
-                <span>💡 {idea.usuarios?.nombre}</span>
+                <span><FaLightbulb /> {idea.usuarios?.nombre}</span>
                 <span>{new Date(idea.fecha_publicacion).toLocaleDateString('es-CO')}</span>
               </div>
               <div className="idea-votes">
@@ -138,7 +139,7 @@ function Ideas() {
         </div>
       ) : (
         <div className="empty-state">
-          <div className="icon">💡</div>
+          <FaLightbulb size={48} className="empty-icon" />
           <p>No hay ideas publicadas con este filtro</p>
         </div>
       )}

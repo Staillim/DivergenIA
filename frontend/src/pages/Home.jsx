@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { FiArrowRight, FiUsers, FiFolder, FiBookOpen, FiCpu } from 'react-icons/fi'
+import { FiArrowRight, FiUsers, FiFolder, FiBookOpen, FiCpu, FiZap, FiBarChart2, FiMessageSquare, FiEye, FiActivity, FiTrendingUp } from 'react-icons/fi'
+import { FaRobot, FaDna } from 'react-icons/fa'
 import '../styles/home.css'
 
 function Home() {
@@ -8,7 +9,7 @@ function Home() {
       {/* Hero */}
       <section className="hero">
         <div className="hero-content">
-          <div className="hero-badge">⚡ Semillero de Investigación</div>
+          <div className="hero-badge"><FiZap /> Semillero de Investigación</div>
           <h1>
             Bienvenido a <span className="gradient-text glow-text">AthenIA</span>
           </h1>
@@ -76,27 +77,27 @@ function Home() {
         <h2 className="section-title">Líneas de Investigación</h2>
         <div className="lines-grid">
           <div className="line-card">
-            <span className="line-emoji">🤖</span>
+            <span className="line-emoji"><FaRobot /></span>
             <h4>Machine Learning</h4>
           </div>
           <div className="line-card">
-            <span className="line-emoji">📊</span>
+            <span className="line-emoji"><FiBarChart2 /></span>
             <h4>Ciencia de Datos</h4>
           </div>
           <div className="line-card">
-            <span className="line-emoji">🗣️</span>
+            <span className="line-emoji"><FiMessageSquare /></span>
             <h4>Procesamiento de Lenguaje Natural</h4>
           </div>
           <div className="line-card">
-            <span className="line-emoji">👁️</span>
+            <span className="line-emoji"><FiEye /></span>
             <h4>Visión por Computadora</h4>
           </div>
           <div className="line-card">
-            <span className="line-emoji">🧬</span>
+            <span className="line-emoji"><FaDna /></span>
             <h4>IA en Salud</h4>
           </div>
           <div className="line-card">
-            <span className="line-emoji">📈</span>
+            <span className="line-emoji"><FiTrendingUp /></span>
             <h4>IA en Finanzas</h4>
           </div>
         </div>

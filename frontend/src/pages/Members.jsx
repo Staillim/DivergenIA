@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { FiSearch } from 'react-icons/fi'
+import { FiSearch, FiUsers, FiUser, FiAward, FiCalendar } from 'react-icons/fi'
 import '../styles/members.css'
 
 function Members() {
@@ -42,7 +42,7 @@ function Members() {
   return (
     <div className="page">
       <div className="section-header">
-        <h1>👥 Miembros del Semillero</h1>
+        <h1><FiUsers className="page-icon" /> Miembros del Semillero</h1>
       </div>
 
       <div className="search-box" style={{ marginBottom: '24px' }}>
@@ -67,11 +67,11 @@ function Members() {
               </div>
               <h3>{member.nombre}</h3>
               <span className="member-role">
-                {member.rol === 'administrador' ? '👑 Administrador' : '👤 Miembro'}
+                {member.rol === 'administrador' ? <><FiAward /> Administrador</> : <><FiUser /> Miembro</>}
               </span>
               <div className="member-details">
-                {member.carrera && <span>🎓 {member.carrera}</span>}
-                {member.semestre && <span>📅 {member.semestre}° Semestre</span>}
+                {member.carrera && <span><FiAward /> {member.carrera}</span>}
+                {member.semestre && <span><FiCalendar /> {member.semestre}° Semestre</span>}
               </div>
             </div>
           ))}

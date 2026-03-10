@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { FiCpu } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import '../styles/auth.css'
 
@@ -55,7 +56,7 @@ function Register() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-header">
-          <span className="auth-icon">🧠</span>
+          <span className="auth-icon"><FiCpu size={48} /></span>
           <h1>Registrarse</h1>
           <p>Únete al semillero DivergenIA</p>
         </div>

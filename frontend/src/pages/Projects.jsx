@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { FiPlus, FiSearch } from 'react-icons/fi'
+import { FiPlus, FiSearch, FiEdit3, FiTool, FiActivity, FiCheckCircle, FiBarChart2, FiUser } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import '../styles/projects.css'
 
@@ -96,11 +96,11 @@ function Projects() {
   }
 
   const statusLabels = {
-    idea: '📝 Idea',
-    desarrollo: '🔨 En desarrollo',
-    investigacion: '🔬 Investigación',
-    pruebas: '🧪 En pruebas',
-    finalizado: '✅ Finalizado'
+    idea: <><FiEdit3 /> Idea</>,
+    desarrollo: <><FiTool /> En desarrollo</>,
+    investigacion: <><FiActivity /> Investigación</>,
+    pruebas: <><FiActivity /> En pruebas</>,
+    finalizado: <><FiCheckCircle /> Finalizado</>
   }
 
   if (loading) {
@@ -110,7 +110,7 @@ function Projects() {
   return (
     <div className="page">
       <div className="section-header">
-        <h1>📊 Proyectos</h1>
+        <h1><FiBarChart2 className="page-icon" /> Proyectos</h1>
         {user && (
           <button className="btn btn-primary" onClick={() => setShowModal(true)}>
             <FiPlus /> Nuevo Proyecto
@@ -156,7 +156,7 @@ function Projects() {
               <h3>{project.titulo}</h3>
               <p>{project.descripcion?.substring(0, 120)}{project.descripcion?.length > 120 ? '...' : ''}</p>
               <div className="project-card-footer">
-                <span>👤 {project.usuarios?.nombre || 'Anónimo'}</span>
+                <span><FiUser /> {project.usuarios?.nombre || 'Anónimo'}</span>
                 <span>{new Date(project.fecha_inicio).toLocaleDateString('es-CO')}</span>
               </div>
             </Link>
@@ -164,7 +164,7 @@ function Projects() {
         </div>
       ) : (
         <div className="empty-state">
-          <div className="icon">📊</div>
+          <FiBarChart2 size={48} className="empty-icon" />
           <p>No se encontraron proyectos</p>
         </div>
       )}
@@ -203,9 +203,9 @@ function Projects() {
                   value={newProject.estado}
                   onChange={e => setNewProject({ ...newProject, estado: e.target.value })}
                 >
-                  <option value="idea">📝 Idea</option>
-                  <option value="desarrollo">🔨 En desarrollo</option>
-                  <option value="investigacion">🔬 Investigación</option>
+                  <option value="idea">Idea</option>
+                  <option value="desarrollo">En desarrollo</option>
+                  <option value="investigacion">Investigación</option>
                 </select>
               </div>
               <div className="modal-actions">

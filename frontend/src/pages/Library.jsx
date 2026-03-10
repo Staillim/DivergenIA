@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { FiUpload, FiDownload, FiSearch, FiFile } from 'react-icons/fi'
+import { FiUpload, FiDownload, FiSearch, FiFile, FiBook, FiBarChart2, FiDatabase, FiCode, FiFolder, FiImage } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import '../styles/library.css'
 
@@ -101,13 +101,13 @@ function Library() {
   })
 
   const typeIcons = {
-    documento: '📄',
-    diapositiva: '📊',
-    dataset: '💾',
-    codigo: '💻',
-    video: '🎥',
-    imagen: '🖼️',
-    otro: '📁'
+    documento: <FiFile />,
+    diapositiva: <FiBarChart2 />,
+    dataset: <FiDatabase />,
+    codigo: <FiCode />,
+    video: <FiFile />,
+    imagen: <FiImage />,
+    otro: <FiFolder />
   }
 
   const formatSize = (bytes) => {
@@ -124,7 +124,7 @@ function Library() {
   return (
     <div className="page">
       <div className="section-header">
-        <h1>📚 Biblioteca</h1>
+        <h1><FiBook className="page-icon" /> Biblioteca</h1>
         <label className={`btn btn-primary ${uploading ? 'btn-disabled' : ''}`}>
           <FiUpload /> {uploading ? 'Subiendo...' : 'Subir Archivo'}
           <input
@@ -155,7 +155,7 @@ function Library() {
               className={`chip ${filterType === type ? 'chip-active' : ''}`}
               onClick={() => setFilterType(type)}
             >
-              {type === 'todos' ? 'Todos' : `${typeIcons[type]} ${type}`}
+              {type === 'todos' ? 'Todos' : <>{typeIcons[type]} {type}</>}
             </button>
           ))}
         </div>
@@ -166,7 +166,7 @@ function Library() {
         <div className="library-list">
           {filtered.map(file => (
             <div key={file.id} className="library-item card">
-              <div className="library-icon">{typeIcons[file.tipo] || '📁'}</div>
+              <div className="library-icon">{typeIcons[file.tipo] || <FiFolder />}</div>
               <div className="library-info">
                 <h4>{file.nombre}</h4>
                 <div className="library-meta">
@@ -184,7 +184,7 @@ function Library() {
         </div>
       ) : (
         <div className="empty-state">
-          <div className="icon">📚</div>
+          <FiBook size={48} className="empty-icon" />
           <p>No hay archivos en la biblioteca</p>
         </div>
       )}
