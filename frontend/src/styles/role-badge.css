@@ -1,0 +1,72 @@
+/* Role Badge Styles - AthenIA Light Theme */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  border: 1px solid var(--badge-border);
+  background: var(--badge-bg);
+  color: var(--badge-color);
+  animation: badge-enter 0.3s ease-out;
+}
+
+.role-badge svg {
+  color: var(--badge-color);
+}
+
+/* Hover effects */
+.role-administrador:hover {
+  background: rgba(0, 61, 165, 0.1);
+  box-shadow: 0 0 20px rgba(0, 61, 165, 0.2);
+  transform: scale(1.05);
+}
+
+.role-miembro:hover {
+  background: rgba(74, 159, 229, 0.1);
+  box-shadow: 0 0 20px rgba(74, 159, 229, 0.2);
+  transform: scale(1.05);
+}
+
+.role-visitante:hover {
+  background: rgba(138, 155, 191, 0.1);
+  transform: scale(1.05);
+}
+
+@keyframes badge-enter {
+  from { opacity: 0; transform: scale(0.8) translateY(-5px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Glow effect for admin */
+.role-administrador {
+  position: relative;
+}
+
+.role-administrador::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 8px;
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.3s ease;
+}
+
+.role-administrador:hover::before {
+  opacity: 0.2;
+  animation: glow-rotate 2s linear infinite;
+}
+
+@keyframes glow-rotate {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* Size variants */
+.size-sm { font-size: 12px; }
+.size-md { font-size: 14px; }
+.size-lg { font-size: 16px; }
