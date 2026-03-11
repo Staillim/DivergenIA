@@ -6,21 +6,26 @@ import { FiFolder, FiZap, FiFile, FiUsers, FiTrendingUp, FiMessageCircle, FiThum
 import '../styles/dashboard.css'
 
 function Dashboard() {
-  const { profile, loading: authLoading } = useAuth()
+  const { profile, loading: authLoading, error: authError } = useAuth()
   const [stats, setStats] = useState({ projects: 0, ideas: 0, members: 0 })
   const [myProjects, setMyProjects] = useState([])
   const [feed, setFeed] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    console.log('[Dashboard] useEffect triggered - profile:', !!profile, 'authLoading:', authLoading, 'authError:', authError)
+    
     if (profile) {
+      console.log('[Dashboard] Profile exists, loading dashboard...')
       setLoading(true)
       loadDashboard()
     } else if (!authLoading) {
-      // Perfil no disponible pero auth terminó - no quedarse en loading
+      console.log('[Dashboard] No profile and auth finished, stopping loading')
       setLoading(false)
+    } else {
+      console.log('[Dashboard] Waiting for auth... authLoading:', authLoading)
     }
-  }, [profile])
+  }, [profile, authLoading, authError])
 
   async function loadDashboard() {
     try {
