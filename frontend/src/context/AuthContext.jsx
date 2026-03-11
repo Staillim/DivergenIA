@@ -16,8 +16,13 @@ export function AuthProvider({ children }) {
   const fetchProfile = useCallback(async (userId) => {
     // Evitar llamadas simultáneas
     if (fetchingProfile.current) {
-      console.log('[AuthContext] fetchProfile: already fetching, skipping')
-      return
+      console.warn('[AuthContext] fetchProfile: already fetching, waiting...')
+      // Esperar un poco y reintentar
+      await new Promise(resolve => setTimeout(resolve, 500))
+      if (fetchingProfile.current) {
+        console.warn('[AuthContext] fetchProfile: still fetching after wait, aborting')
+        return
+      }
     }
     
     console.log('[AuthContext] fetchProfile: starting for userId:', userId)
@@ -49,6 +54,8 @@ export function AuthProvider({ children }) {
             console.log('[AuthContext] Profile found on retry:', retryData.nombre)
             setProfile(retryData)
             setError(null)
+            fetchingProfile.current = false
+            setLoading(false)
             return
           }
           console.warn('[AuthContext] Profile not found after retry')
@@ -64,6 +71,9 @@ export function AuthProvider({ children }) {
         console.log('[AuthContext] Profile loaded successfully:', data.nombre)
         setProfile(data)
         setError(null)
+      } else {
+        console.warn('[AuthContext] No data and no error from query')
+        setProfile(null)
       }
     } catch (err) {
       console.error('[AuthContext] fetchProfile exception:', err)
@@ -79,11 +89,15 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let isMounted = true
 
+    // Resetear fetchingProfile al montar para evitar bloqueos de sesiones anteriores
+    fetchingProfile.current = false
+    
     // Safety timeout: nunca quedarse en loading más de 8 segundos
     const safetyTimer = setTimeout(() => {
       if (isMounted) {
         console.warn('[AuthContext] Safety timeout reached (8s), forcing loading=false')
         setLoading(false)
+        fetchingProfile.current = false
       }
     }, 8000)
 
@@ -97,6 +111,10 @@ export function AuthProvider({ children }) {
         console.log('[AuthContext] === Auth event:', event, session?.user?.id ? 'user:' + session.user.id : 'no-user', 'isSigningUp:', isSigningUp.current, '===')
 
         const currentUser = session?.user ?? null
+        
+        // Log estado ANTES del cambio
+        console.log('[AuthContext] State BEFORE event - user:', !!user, 'profile:', !!profile)
+        
         setUser(currentUser)
 
         if (!currentUser) {
@@ -115,8 +133,16 @@ export function AuthProvider({ children }) {
           return
         }
 
-        // Para INITIAL_SESSION, SIGNED_IN, y TOKEN_REFRESHED: cargar perfil
-        if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        // Cargar perfil en eventos importantes O si tenemos user pero no profile
+        const needsProfileFetch = 
+          event === 'INITIAL_SESSION' || 
+          event === 'SIGNED_IN' || 
+          event === 'TOKEN_REFRESHED' ||
+          event === 'USER_UPDATED'
+        
+        console.log('[AuthContext] needsProfileFetch:', needsProfileFetch, 'current profile:', !!profile)
+        
+        if (needsProfileFetch) {
           console.log('[AuthContext] Event requires profile fetch, calling fetchProfile...')
           await fetchProfile(currentUser.id)
         } else {
@@ -137,6 +163,14 @@ export function AuthProvider({ children }) {
       subscription.unsubscribe()
     }
   }, [fetchProfile])
+
+  // Recovery mechanism: si hay user pero NO profile y NO estamos loading, cargar perfil
+  useEffect(() => {
+    if (user && !profile && !loading && !isSigningUp.current && !fetchingProfile.current) {
+      console.warn('[AuthContext] Recovery: user exists but no profile, fetching...')
+      fetchProfile(user.id)
+    }
+  }, [user, profile, loading, fetchProfile])
 
   async function signUp(email, password, userData) {
     isSigningUp.current = true
