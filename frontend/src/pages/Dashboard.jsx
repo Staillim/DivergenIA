@@ -14,12 +14,13 @@ function Dashboard() {
 
   useEffect(() => {
     if (profile) {
+      setLoading(true)
       loadDashboard()
     } else if (!authLoading) {
       // Perfil no disponible pero auth terminó - no quedarse en loading
       setLoading(false)
     }
-  }, [profile, authLoading])
+  }, [profile])
 
   async function loadDashboard() {
     try {
