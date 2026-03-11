@@ -12,18 +12,52 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null)
   const isSigningUp = useRef(false)
   const hasFetchedInitialProfile = useRef(false)
+  const isFetchingProfile = useRef(false) // Protección contra llamadas concurrentes
 
   async function fetchProfile(userId) {
+    // Evitar llamadas concurrentes
+    if (isFetchingProfile.current) {
+      console.log('[AuthContext] fetchProfile: already in progress, skipping...')
+      return
+    }
+
+    isFetchingProfile.current = true
     console.log('[AuthContext] fetchProfile: starting for userId:', userId)
 
     try {
       setError(null)
 
-      const { data, error: queryError } = await supabase
+      // Diagnóstico: verificar qué usuario está autenticado en Supabase
+      const { data: sessionData } = await supabase.auth.getSession()
+      console.log('[AuthContext] → Current auth.uid:', sessionData?.session?.user?.id)
+      console.log('[AuthContext] → Requested userId:', userId)
+      console.log('[AuthContext] → Match:', sessionData?.session?.user?.id === userId)
+
+      console.log('[AuthContext] → Querying Supabase usuarios table...')
+      
+      // Crear un timeout de 3 segundos para la query
+      const queryPromise = supabase
         .from('usuarios')
         .select('*')
         .eq('id', userId)
         .single()
+
+      console.log('[AuthContext] → Query created, starting race with timeout...')
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Query timeout after 3s')), 3000)
+      )
+
+      const result = await Promise.race([queryPromise, timeoutPromise])
+        .catch(err => {
+          console.error('[AuthContext] → Query FAILED or TIMED OUT:', err.message)
+          return { data: null, error: err }
+        })
+      
+      console.log('[AuthContext] → Race completed, result:', result)
+      const { data, error: queryError } = result
+
+      console.log('[AuthContext] → Query completed. data:', !!data, 'error:', queryError?.code || queryError?.message || 'none')
 
       if (queryError) {
         console.warn('[AuthContext] fetchProfile error:', queryError.code, queryError.message)
@@ -33,11 +67,14 @@ export function AuthProvider({ children }) {
           console.log('[AuthContext] Profile not found (PGRST116), retrying in 1s...')
           await new Promise(resolve => setTimeout(resolve, 1000))
           
+          console.log('[AuthContext] → Retry: Querying Supabase usuarios table...')
           const { data: retryData, error: retryError } = await supabase
             .from('usuarios')
             .select('*')
             .eq('id', userId)
             .single()
+
+          console.log('[AuthContext] → Retry completed. data:', !!retryData, 'error:', retryError?.code || 'none')
 
           if (!retryError && retryData) {
             console.log('[AuthContext] ✓ Profile found on retry:', retryData.nombre)
@@ -52,7 +89,7 @@ export function AuthProvider({ children }) {
         } else {
           console.error('[AuthContext] Critical error loading profile:', queryError)
           setProfile(null)
-          setError('Error al cargar el perfil: ' + queryError.message)
+          setError('Error al cargar el perfil: ' + (queryError.message || 'Error desconocido'))
         }
       } else if (data) {
         console.log('[AuthContext] ✓ Profile loaded successfully:', data.nombre)
@@ -67,6 +104,7 @@ export function AuthProvider({ children }) {
       setProfile(null)
       setError('Error inesperado al cargar el perfil.')
     } finally {
+      isFetchingProfile.current = false // Liberar el lock
       setLoading(false)
       console.log('[AuthContext] fetchProfile: complete, loading=false')
     }
