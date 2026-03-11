@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase.js'
 
 const AuthContext = createContext({})
@@ -10,39 +10,12 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-
-  useEffect(() => {
-    // Obtener sesión actual
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchProfile(session.user.id)
-      } else {
-        setLoading(false)
-      }
-    })
-
-    // Escuchar cambios de auth
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setUser(session?.user ?? null)
-        if (session?.user) {
-          await fetchProfile(session.user.id)
-        } else {
-          setProfile(null)
-          setError(null)
-          setLoading(false)
-        }
-      }
-    )
-
-    return () => subscription.unsubscribe()
-  }, [])
+  const isSigningUp = useRef(false)
 
   async function fetchProfile(userId) {
     try {
       setError(null)
-      
+
       const { data, error } = await supabase
         .from('usuarios')
         .select('*')
@@ -51,29 +24,35 @@ export function AuthProvider({ children }) {
 
       if (error) {
         console.error('Error fetching profile:', error)
-        
-        // Si el error es que no se encontró el usuario (404)
+
         if (error.code === 'PGRST116') {
-          setError('No se encontró tu perfil en la base de datos.')
+          // Perfil no encontrado - puede ser race condition con signUp, reintentar
+          await new Promise(resolve => setTimeout(resolve, 1500))
+          const { data: retryData, error: retryError } = await supabase
+            .from('usuarios')
+            .select('*')
+            .eq('id', userId)
+            .single()
+
+          if (!retryError && retryData) {
+            setProfile(retryData)
+            setError(null)
+            return
+          }
           setProfile(null)
-          // NO cerrar sesión, dejar que el usuario vea el error
+          setError('No se encontró tu perfil. Intenta cerrar sesión y volver a ingresar.')
         } else {
-          // Otros errores sí cierran sesión
-          console.error('Critical error, logging out:', error)
-          await supabase.auth.signOut()
-          setUser(null)
           setProfile(null)
-          setError('Error al cargar el perfil. Por favor, inicia sesión nuevamente.')
+          setError('Error al cargar el perfil.')
         }
       } else if (data) {
         setProfile(data)
+        setError(null)
       } else {
-        console.error('No profile data returned')
         setProfile(null)
-        setError('No se pudo obtener tu información de perfil.')
       }
-    } catch (error) {
-      console.error('Unexpected error fetching profile:', error)
+    } catch (err) {
+      console.error('Unexpected error fetching profile:', err)
       setProfile(null)
       setError('Error inesperado al cargar el perfil.')
     } finally {
@@ -81,39 +60,112 @@ export function AuthProvider({ children }) {
     }
   }
 
-  async function signUp(email, password, userData) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password
+  useEffect(() => {
+    let isMounted = true
+    let initialDone = false
+
+    // Obtener sesión inicial
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted || initialDone) return
+      initialDone = true
+
+      const currentUser = session?.user ?? null
+      setUser(currentUser)
+
+      if (currentUser && !isSigningUp.current) {
+        fetchProfile(currentUser.id)
+      } else if (!currentUser) {
+        setLoading(false)
+      }
     })
 
-    if (error) throw error
+    // Escuchar cambios de auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!isMounted) return
 
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('usuarios')
-        .insert({
+        const currentUser = session?.user ?? null
+        setUser(currentUser)
+
+        if (event === 'INITIAL_SESSION') {
+          if (initialDone) return
+          initialDone = true
+          if (currentUser && !isSigningUp.current) {
+            fetchProfile(currentUser.id)
+          } else if (!currentUser) {
+            setLoading(false)
+          }
+        } else if (event === 'SIGNED_IN') {
+          if (!isSigningUp.current) {
+            setLoading(true)
+            await fetchProfile(currentUser.id)
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setProfile(null)
+          setError(null)
+          setLoading(false)
+        }
+      }
+    )
+
+    return () => {
+      isMounted = false
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  async function signUp(email, password, userData) {
+    isSigningUp.current = true
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password
+      })
+
+      if (error) throw error
+
+      if (data.user) {
+        const profileData = {
           id: data.user.id,
           nombre: userData.nombre,
           correo: email,
           carrera: userData.carrera,
           semestre: userData.semestre,
           rol: 'miembro'
-        })
+        }
 
-      if (profileError) throw profileError
+        const { error: profileError } = await supabase
+          .from('usuarios')
+          .insert(profileData)
+
+        if (profileError) throw profileError
+
+        // Establecer perfil directamente para evitar race condition
+        setProfile(profileData)
+        setError(null)
+        setLoading(false)
+      }
+
+      return data
+    } finally {
+      isSigningUp.current = false
     }
-
-    return data
   }
 
   async function signIn(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
-    if (error) throw error
-    return data
+    setLoading(true)
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+      if (error) throw error
+      return data
+    } catch (err) {
+      setLoading(false)
+      throw err
+    }
   }
 
   async function signOut() {

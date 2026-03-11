@@ -6,15 +6,20 @@ import { FiFolder, FiZap, FiFile, FiUsers, FiTrendingUp, FiMessageCircle, FiThum
 import '../styles/dashboard.css'
 
 function Dashboard() {
-  const { profile } = useAuth()
+  const { profile, loading: authLoading } = useAuth()
   const [stats, setStats] = useState({ projects: 0, ideas: 0, members: 0 })
   const [myProjects, setMyProjects] = useState([])
   const [feed, setFeed] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (profile) loadDashboard()
-  }, [profile])
+    if (profile) {
+      loadDashboard()
+    } else if (!authLoading) {
+      // Perfil no disponible pero auth terminó - no quedarse en loading
+      setLoading(false)
+    }
+  }, [profile, authLoading])
 
   async function loadDashboard() {
     try {
@@ -75,7 +80,7 @@ function Dashboard() {
         Promise.all([
           supabase.from('miembros_proyecto').select('*', { count: 'exact', head: true }).eq('usuario_id', profile.id),
           supabase.from('ideas').select('*', { count: 'exact', head: true }),
-          supabase.from('usuarios').select('*', { count: 'exact', head: true }).eq('activo', true),
+          supabase.from('usuarios').select('*', { count: 'exact', head: true }),
         ])
       ])
 
