@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase.js'
 
 const AuthContext = createContext({})
@@ -11,22 +11,10 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const isSigningUp = useRef(false)
-  const fetchingProfile = useRef(false)
+  const hasFetchedInitialProfile = useRef(false)
 
-  const fetchProfile = useCallback(async (userId) => {
-    // Evitar llamadas simultáneas
-    if (fetchingProfile.current) {
-      console.warn('[AuthContext] fetchProfile: already fetching, waiting...')
-      // Esperar un poco y reintentar
-      await new Promise(resolve => setTimeout(resolve, 500))
-      if (fetchingProfile.current) {
-        console.warn('[AuthContext] fetchProfile: still fetching after wait, aborting')
-        return
-      }
-    }
-    
+  async function fetchProfile(userId) {
     console.log('[AuthContext] fetchProfile: starting for userId:', userId)
-    fetchingProfile.current = true
 
     try {
       setError(null)
@@ -41,9 +29,10 @@ export function AuthProvider({ children }) {
         console.warn('[AuthContext] fetchProfile error:', queryError.code, queryError.message)
 
         if (queryError.code === 'PGRST116') {
-          // Perfil no encontrado - reintentar una vez (race condition con signUp)
-          console.log('[AuthContext] Profile not found (PGRST116), retrying in 2s...')
-          await new Promise(resolve => setTimeout(resolve, 2000))
+          // Perfil no encontrado - puede ser usuario nuevo, esperar y reintentar
+          console.log('[AuthContext] Profile not found (PGRST116), retrying in 1s...')
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          
           const { data: retryData, error: retryError } = await supabase
             .from('usuarios')
             .select('*')
@@ -51,28 +40,26 @@ export function AuthProvider({ children }) {
             .single()
 
           if (!retryError && retryData) {
-            console.log('[AuthContext] Profile found on retry:', retryData.nombre)
+            console.log('[AuthContext] ✓ Profile found on retry:', retryData.nombre)
             setProfile(retryData)
             setError(null)
-            fetchingProfile.current = false
             setLoading(false)
             return
           }
-          console.warn('[AuthContext] Profile not found after retry')
+          console.warn('[AuthContext] ✗ Profile not found after retry')
           setProfile(null)
           setError('No se encontró tu perfil de usuario.')
         } else {
-          // Cualquier otro error (401, 403, red, etc.) - NO cerrar sesión
           console.error('[AuthContext] Critical error loading profile:', queryError)
           setProfile(null)
           setError('Error al cargar el perfil: ' + queryError.message)
         }
       } else if (data) {
-        console.log('[AuthContext] Profile loaded successfully:', data.nombre)
+        console.log('[AuthContext] ✓ Profile loaded successfully:', data.nombre)
         setProfile(data)
         setError(null)
       } else {
-        console.warn('[AuthContext] No data and no error from query')
+        console.warn('[AuthContext] ✗ No data and no error from query')
         setProfile(null)
       }
     } catch (err) {
@@ -80,97 +67,96 @@ export function AuthProvider({ children }) {
       setProfile(null)
       setError('Error inesperado al cargar el perfil.')
     } finally {
-      fetchingProfile.current = false
       setLoading(false)
       console.log('[AuthContext] fetchProfile: complete, loading=false')
     }
-  }, [])
+  }
 
   useEffect(() => {
+    console.log('[AuthContext] ========== AuthProvider MOUNTING ==========')
     let isMounted = true
-
-    // Resetear fetchingProfile al montar para evitar bloqueos de sesiones anteriores
-    fetchingProfile.current = false
     
-    // Safety timeout: nunca quedarse en loading más de 8 segundos
+    // Safety timeout: nunca quedarse en loading más de 10 segundos
     const safetyTimer = setTimeout(() => {
-      if (isMounted) {
-        console.warn('[AuthContext] Safety timeout reached (8s), forcing loading=false')
+      if (isMounted && loading) {
+        console.error('[AuthContext] ⚠️ SAFETY TIMEOUT (10s) - forcing loading=false')
         setLoading(false)
-        fetchingProfile.current = false
       }
-    }, 8000)
+    }, 10000)
 
-    console.log('[AuthContext] Mounting, setting up onAuthStateChange listener')
-
-    // Usar SOLO onAuthStateChange - más confiable que getSession + listener
+    // Listener de cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!isMounted) return
 
-        console.log('[AuthContext] === Auth event:', event, session?.user?.id ? 'user:' + session.user.id : 'no-user', 'isSigningUp:', isSigningUp.current, '===')
+        console.log('[AuthContext] ========================================')
+        console.log('[AuthContext] Auth Event:', event)
+        console.log('[AuthContext] Session:', session?.user?.id ? 'EXISTS (' + session.user.id + ')' : 'NULL')
+        console.log('[AuthContext] isSigningUp:', isSigningUp.current)
+        console.log('[AuthContext] ========================================')
 
         const currentUser = session?.user ?? null
-        
-        // Log estado ANTES del cambio
-        console.log('[AuthContext] State BEFORE event - user:', !!user, 'profile:', !!profile)
-        
         setUser(currentUser)
 
         if (!currentUser) {
           // Sin usuario: limpiar todo
-          console.log('[AuthContext] No user, clearing state')
+          console.log('[AuthContext] → No user, clearing all state')
           setProfile(null)
           setError(null)
+          setLoading(false)
+          hasFetchedInitialProfile.current = false
+          return
+        }
+
+        // Tenemos usuario
+        console.log('[AuthContext] → User detected')
+
+        // Durante signup, el perfil se establece manualmente
+        if (isSigningUp.current) {
+          console.log('[AuthContext] → isSigningUp=true, skipping fetchProfile')
           setLoading(false)
           return
         }
 
-        // Tenemos usuario - decidir si cargar perfil
-        if (isSigningUp.current) {
-          // Durante signup no cargar perfil (se establece directamente)
-          console.log('[AuthContext] isSigningUp=true, skipping fetchProfile')
-          return
-        }
-
-        // Cargar perfil en eventos importantes O si tenemos user pero no profile
-        const needsProfileFetch = 
+        // Para INITIAL_SESSION, SIGNED_IN, TOKEN_REFRESHED: cargar perfil
+        const shouldFetchProfile = 
           event === 'INITIAL_SESSION' || 
           event === 'SIGNED_IN' || 
           event === 'TOKEN_REFRESHED' ||
           event === 'USER_UPDATED'
         
-        console.log('[AuthContext] needsProfileFetch:', needsProfileFetch, 'current profile:', !!profile)
-        
-        if (needsProfileFetch) {
-          console.log('[AuthContext] Event requires profile fetch, calling fetchProfile...')
+        if (shouldFetchProfile) {
+          console.log('[AuthContext] → Event requires profile fetch')
+          hasFetchedInitialProfile.current = true
           await fetchProfile(currentUser.id)
         } else {
-          console.log('[AuthContext] Event does not require profile fetch')
-          // Si el evento no requiere fetch pero hay user, asegurarse de que loading se desactive
-          // si no hay un fetch en progreso
-          if (!fetchingProfile.current && isMounted) {
-            setLoading(false)
-          }
+          console.log('[AuthContext] → Event does not require profile fetch, setting loading=false')
+          setLoading(false)
         }
       }
     )
 
     return () => {
-      console.log('[AuthContext] Unmounting, cleaning up')
+      console.log('[AuthContext] ========== AuthProvider UNMOUNTING ==========')
       isMounted = false
       clearTimeout(safetyTimer)
       subscription.unsubscribe()
     }
-  }, [fetchProfile])
+  }, []) // Sin dependencias para evitar recrear el listener
 
-  // Recovery mechanism: si hay user pero NO profile y NO estamos loading, cargar perfil
+  // Recovery: si hay user pero no profile después de 2 segundos
   useEffect(() => {
-    if (user && !profile && !loading && !isSigningUp.current && !fetchingProfile.current) {
-      console.warn('[AuthContext] Recovery: user exists but no profile, fetching...')
-      fetchProfile(user.id)
-    }
-  }, [user, profile, loading, fetchProfile])
+    if (!user || profile || loading || isSigningUp.current) return
+
+    const recoveryTimer = setTimeout(() => {
+      if (user && !profile && !loading && !isSigningUp.current) {
+        console.warn('[AuthContext] 🔄 RECOVERY: user exists but no profile after 2s, fetching...')
+        fetchProfile(user.id)
+      }
+    }, 2000)
+
+    return () => clearTimeout(recoveryTimer)
+  }, [user, profile, loading])
 
   async function signUp(email, password, userData) {
     isSigningUp.current = true
